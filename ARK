@@ -1,5 +1,6 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Window
 local Window = Rayfield:CreateWindow({
     Name = "ARK",
     Icon = 10180536602,
@@ -7,19 +8,8 @@ local Window = Rayfield:CreateWindow({
     LoadingSubtitle = "By zxkuhl",
     Theme = "Default",
     ToggleUIKeybind = "K",
-
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "ARK_AC",
-        FileName = "ARK_HUB"
-    },
-
-    Discord = {
-        Enabled = true,
-        Invite = "KPUPp4m9pJ",
-        RememberJoins = true
-    },
-
+    ConfigurationSaving = { Enabled = true, FolderName = "ARK_AC", FileName = "ARK_HUB" },
+    Discord = { Enabled = true, Invite = "KPUPp4m9pJ", RememberJoins = true },
     KeySystem = true,
     KeySettings = {
         Title = "KEY",
@@ -32,44 +22,53 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local MarketplaceService = game:GetService("MarketplaceService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 ----------------------------------------------------
 ---------------------- MAIN TAB --------------------
 ----------------------------------------------------
-
 local MainTab = Window:CreateTab("MAIN", 10180536602)
 local MainSection = MainTab:CreateSection("MAIN FEATURES")
 
--- Infinite Yield
 MainTab:CreateButton({
     Name = "Infinite Yield",
     SectionParent = MainSection,
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+        end)
     end
 })
 
--- Fly
 MainTab:CreateButton({
     Name = "Fly",
     SectionParent = MainSection,
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
+        end)
     end
 })
 
--- Dark Dex
 MainTab:CreateButton({
     Name = "Dark Dex",
     SectionParent = MainSection,
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/memeenjoyer43/darkdex/refs/heads/main/script"))()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/memeenjoyer43/darkdex/refs/heads/main/script"))()
+        end)
     end
 })
 
 ----------------------------------------------------
 ----------------------- ESP ------------------------
 ----------------------------------------------------
-
 _G.ARK_ESP_ENABLED = false
 local ESP_Holder
 
@@ -81,31 +80,25 @@ local function HardKillESP()
 end
 
 local function StartESP()
-    local Players = game:GetService("Players")
-    local plr = Players.LocalPlayer
-
     if not ESP_Holder then
         ESP_Holder = Instance.new("Folder", game.CoreGui)
         ESP_Holder.Name = "ESP"
     end
 
-    spawn(function()
+    task.spawn(function()
         while task.wait() and _G.ARK_ESP_ENABLED do
-            for i, v in pairs(Players:GetPlayers()) do
-                if v ~= plr and v.Character then
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character then
                     if not v.Character:FindFirstChild("GetReal") then
                         local highlight = Instance.new("Highlight")
-                        highlight.RobloxLocked = true
                         highlight.Name = "GetReal"
                         highlight.Adornee = v.Character
+                        highlight.RobloxLocked = true
                         highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                        highlight.FillColor = (_G.UseTeamColor and v.TeamColor.Color)
-                            or ((plr.TeamColor == v.TeamColor) and _G.FriendColor or _G.EnemyColor)
+                        highlight.FillColor = (_G.UseTeamColor and v.TeamColor.Color) or ((LocalPlayer.TeamColor == v.TeamColor) and _G.FriendColor or _G.EnemyColor)
                         highlight.Parent = v.Character
                     else
-                        v.Character.GetReal.FillColor =
-                            (_G.UseTeamColor and v.TeamColor.Color)
-                            or ((plr.TeamColor == v.TeamColor) and _G.FriendColor or _G.EnemyColor)
+                        v.Character.GetReal.FillColor = (_G.UseTeamColor and v.TeamColor.Color) or ((LocalPlayer.TeamColor == v.TeamColor) and _G.FriendColor or _G.EnemyColor)
                     end
                 end
             end
@@ -132,9 +125,82 @@ MainTab:CreateToggle({
 })
 
 ----------------------------------------------------
+---------------------- GAME TAB --------------------
+----------------------------------------------------
+local GameTab = Window:CreateTab("GAME", 10180536602)
+local GameSection = GameTab:CreateSection("Game Info")
+
+-- Safely get product info
+local success, productInfo = pcall(function()
+    return MarketplaceService:GetProductInfo(game.PlaceId)
+end)
+local gameName = (success and productInfo and productInfo.Name) or "Unknown"
+
+GameTab:CreateLabel("Game Name: " .. gameName)
+local currentPlayersBox = GameTab:CreateLabel("Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers)
+local localPlayerBox = GameTab:CreateLabel("Local Player: " .. LocalPlayer.Name)
+local pingBox = GameTab:CreateLabel("Ping: ERROR WITH CALCULTING.")
+local timeSinceStartBox = GameTab:CreateLabel("Time Since Start: UNKNOWN DUE TO ERROR.")
+
+local startTime = tick()
+
+-- Safely find RemoteFunction
+local RemoteFunction
+pcall(function()
+    RemoteFunction = ReplicatedStorage:FindFirstChild("YourRemoteFunction") -- replace if needed
+end)
+
+-- Ping calculation
+local function GetPing()
+    if not RemoteFunction then return 0, 0 end
+    local startTick = tick()
+    local success, serverTime = pcall(function()
+        return RemoteFunction:InvokeServer()
+    end)
+    if success and serverTime then
+        return (serverTime - startTick) * 1000, (tick() - serverTime) * 1000
+    else
+        return 0, 0
+    end
+end
+
+-- Update loop
+task.spawn(function()
+    while true do
+        task.wait(1)
+        pcall(function()
+            currentPlayersBox:SetText("Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers)
+            local sent, receive = GetPing()
+            pingBox:SetText(string.format("Ping: Sent %.0fms | Receive %.0fms", sent, receive))
+            timeSinceStartBox:SetText("Time Since Start: " .. math.floor(tick() - startTime) .. "s")
+        end)
+    end
+end)
+
+----------------------------------------------------
+---------------------- INFO TAB --------------------
+----------------------------------------------------
+local InfoTab = Window:CreateTab("INFO", 10180536602)
+local InfoSection = InfoTab:CreateSection("ARK HUB INFORMATION")
+InfoTab:CreateLabel("ARK Hub — Made by zxkuhl")
+InfoTab:CreateLabel("Version: 2.4")
+InfoTab:CreateLabel("UPDATE CATALOG: minor bug fixes and major elements added some bugs still need fixed.")
+InfoTab:CreateLabel("DISCORD SERVER: AstraCore.")
+
+InfoTab:CreateButton({
+    Name = "Copy Discord Invite",
+    SectionParent = InfoSection,
+    Callback = function()
+        pcall(function()
+            setclipboard("https://discord.gg/KPUPp4m9pJ")
+            Rayfield:Notify({Title="Copied!", Content="Discord invite copied to clipboard.", Duration=3})
+        end)
+    end
+})
+
+----------------------------------------------------
 --------------- LOCAL PLAYER TAB -------------------
 ----------------------------------------------------
-
 local LocalTab = Window:CreateTab("LOCAL PLAYER", 10180536602)
 local LPSection = LocalTab:CreateSection("Player Mods")
 
@@ -144,9 +210,12 @@ LocalTab:CreateSlider({
     Increment = 1,
     CurrentValue = 16,
     SectionParent = LPSection,
-    Flag = "WALKSPEED",
     Callback = function(v)
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
+        pcall(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.WalkSpeed = v
+            end
+        end)
     end
 })
 
@@ -156,9 +225,12 @@ LocalTab:CreateSlider({
     Increment = 1,
     CurrentValue = 50,
     SectionParent = LPSection,
-    Flag = "JUMPPOWER",
     Callback = function(v)
-        game.Players.LocalPlayer.Character.Humanoid.JumpPower = v
+        pcall(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.JumpPower = v
+            end
+        end)
     end
 })
 
@@ -166,16 +238,19 @@ LocalTab:CreateToggle({
     Name = "God Mode",
     CurrentValue = false,
     SectionParent = LPSection,
-    Flag = "GODMODE",
     Callback = function(v)
-        local h = game.Players.LocalPlayer.Character.Humanoid
-        if v then
-            h.MaxHealth = math.huge
-            h.Health = math.huge
-        else
-            h.MaxHealth = 100
-            h.Health = 100
-        end
+        pcall(function()
+            local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+            if h then
+                if v then
+                    h.MaxHealth = math.huge
+                    h.Health = math.huge
+                else
+                    h.MaxHealth = 100
+                    h.Health = 100
+                end
+            end
+        end)
     end
 })
 
@@ -183,7 +258,9 @@ LocalTab:CreateButton({
     Name = "Infinite Jump",
     SectionParent = LPSection,
     Callback = function()
-        loadstring(game:HttpGet("https://obj.wearedevs.net/2/scripts/Infinite%20Jump.lua"))()
+        pcall(function()
+            loadstring(game:HttpGet("https://obj.wearedevs.net/2/scripts/Infinite%20Jump.lua"))()
+        end)
     end
 })
 
@@ -191,14 +268,15 @@ LocalTab:CreateButton({
     Name = "Become Invisible",
     SectionParent = LPSection,
     Callback = function()
-        loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
+        pcall(function()
+            loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
+        end)
     end
 })
 
 ----------------------------------------------------
 ------------------ TOOLS TAB -----------------------
 ----------------------------------------------------
-
 local ToolsTab = Window:CreateTab("TOOLS", 10180536602)
 local ToolsSection = ToolsTab:CreateSection("Utilities")
 
@@ -206,7 +284,9 @@ ToolsTab:CreateButton({
     Name = "Server Hop",
     SectionParent = ToolsSection,
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/LeoKholYt/roblox/main/lk_serverhop.lua"))():Teleport(game.PlaceId)
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/LeoKholYt/roblox/main/lk_serverhop.lua"))():Teleport(game.PlaceId)
+        end)
     end
 })
 
@@ -214,7 +294,9 @@ ToolsTab:CreateButton({
     Name = "Anti AFK",
     SectionParent = ToolsSection,
     Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/evxncodes/mainroblox/main/anti-afk"))()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/evxncodes/mainroblox/main/anti-afk"))()
+        end)
     end
 })
 
@@ -222,23 +304,25 @@ ToolsTab:CreateButton({
     Name = "Player Info (Console)",
     SectionParent = ToolsSection,
     Callback = function()
-        print("----- PLAYER INFO START -----")
-        for i, v in pairs(game.Players:GetPlayers()) do
-            print("DisplayName:", v.DisplayName)
-            print("Username:", v.Name)
-            if v.Character and v.Character:FindFirstChild("Humanoid") then
-                print("Health:", v.Character.Humanoid.Health)
-                print("WalkSpeed:", v.Character.Humanoid.WalkSpeed)
-                print("JumpPower:", v.Character.Humanoid.JumpPower)
-            else
-                print("Character data unavailable")
+        pcall(function()
+            print("----- PLAYER INFO START -----")
+            for _, v in pairs(Players:GetPlayers()) do
+                print("DisplayName:", v.DisplayName)
+                print("Username:", v.Name)
+                if v.Character and v.Character:FindFirstChild("Humanoid") then
+                    print("Health:", v.Character.Humanoid.Health)
+                    print("WalkSpeed:", v.Character.Humanoid.WalkSpeed)
+                    print("JumpPower:", v.Character.Humanoid.JumpPower)
+                else
+                    print("Character data unavailable")
+                end
+                print("UserId:", v.UserId)
+                print("Account Age:", v.AccountAge)
+                print("----------------------------------------")
+                task.wait(0.5)
             end
-            print("UserId:", v.UserId)
-            print("Account Age:", v.AccountAge)
-            print("----------------------------------------")
-            task.wait(0.5)
-        end
-        print("----- PLAYER INFO END -----")
+            print("----- PLAYER INFO END -----")
+        end)
     end
 })
 
@@ -246,107 +330,86 @@ ToolsTab:CreateButton({
     Name = "Open Teleport Menu",
     SectionParent = ToolsSection,
     Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/YourTeleportGUIScript"))()
+        pcall(function()
+            loadstring(game:HttpGet("https://pastebin.com/raw/YourTeleportGUIScript"))()
+        end)
     end
 })
 
-----------------------------------------------------
--------------------- INFO TAB ----------------------
-----------------------------------------------------
-
-local InfoTab = Window:CreateTab("INFO", 10180536602)
-local InfoSection = InfoTab:CreateSection("Information")
-
-InfoTab:CreateLabel("Current Version: 1.0")
-InfoTab:CreateLabel("Update Catalog: No updates yet.")
-
-InfoTab:CreateButton({
-    Name = "Join Discord",
-    SectionParent = InfoSection,
+ToolsTab:CreateButton({
+    Name = "Rejoin Server",
+    SectionParent = ToolsSection,
     Callback = function()
-        setclipboard("https://discord.gg/KPUPp4m9pJ")
-        Rayfield:Notify({
-            Title = "Discord",
-            Content = "Discord link copied!",
-            Duration = 8,
-            Image = 8248378219
-        })
+        pcall(function()
+            local ts = game:GetService("TeleportService")
+            ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+        end)
     end
 })
 
 ----------------------------------------------------
------------------- VISUALS TAB --------------------
+------------------ VISUALS TAB ---------------------
 ----------------------------------------------------
-
 local VisualsTab = Window:CreateTab("VISUALS", 10180536602)
 local VisualsSection = VisualsTab:CreateSection("Visual Mods")
 
--- Highlights Toggle
 VisualsTab:CreateToggle({
     Name = "Highlights",
     CurrentValue = false,
     SectionParent = VisualsSection,
-    Flag = "HIGHLIGHTS_TOGGLE",
     Callback = function(v)
-        local Players = game:GetService("Players")
-        local plr = Players.LocalPlayer
-
-        for i, target in pairs(Players:GetPlayers()) do
-            if target ~= plr and target.Character then
-                local highlight = target.Character:FindFirstChild("Highlight")
-                if v then
-                    if not highlight then
-                        highlight = Instance.new("Highlight")
-                        highlight.Name = "Highlight"
-                        highlight.Adornee = target.Character
-                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                        highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                        highlight.Parent = target.Character
-                    end
-                else
-                    if highlight then
-                        highlight:Destroy()
+        pcall(function()
+            for _, target in pairs(Players:GetPlayers()) do
+                if target ~= LocalPlayer and target.Character then
+                    local h = target.Character:FindFirstChild("Highlight")
+                    if v and not h then
+                        h = Instance.new("Highlight")
+                        h.Name = "Highlight"
+                        h.Adornee = target.Character
+                        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        h.FillColor = Color3.fromRGB(255, 0, 0)
+                        h.Parent = target.Character
+                    elseif not v and h then
+                        h:Destroy()
                     end
                 end
             end
-        end
+        end)
     end
 })
 
--- Full Bright Toggle
 VisualsTab:CreateToggle({
     Name = "Full Bright",
     CurrentValue = false,
     SectionParent = VisualsSection,
-    Flag = "FULLBRIGHT_TOGGLE",
     Callback = function(v)
-        local lighting = game:GetService("Lighting")
-        if v then
-            lighting.Ambient = Color3.new(1,1,1)
-            lighting.Brightness = 2
-            lighting.GlobalShadows = false
-        else
-            lighting.Ambient = Color3.fromRGB(128,128,128)
-            lighting.Brightness = 1
-            lighting.GlobalShadows = true
-        end
+        pcall(function()
+            if v then
+                Lighting.Ambient = Color3.new(1, 1, 1)
+                Lighting.Brightness = 2
+                Lighting.GlobalShadows = false
+            else
+                Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+                Lighting.Brightness = 1
+                Lighting.GlobalShadows = true
+            end
+        end)
     end
 })
 
--- Remove Fog Toggle
 VisualsTab:CreateToggle({
     Name = "Remove Fog",
     CurrentValue = false,
     SectionParent = VisualsSection,
-    Flag = "REMOVEFOG_TOGGLE",
     Callback = function(v)
-        local lighting = game:GetService("Lighting")
-        if v then
-            lighting.FogEnd = 100000
-            lighting.FogStart = 0
-        else
-            lighting.FogEnd = 1000
-            lighting.FogStart = 0
-        end
+        pcall(function()
+            if v then
+                Lighting.FogEnd = 999999
+                Lighting.FogStart = 0
+            else
+                Lighting.FogEnd = 1000
+                Lighting.FogStart = 0
+            end
+        end)
     end
 })
