@@ -1,0 +1,352 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "ARK",
+    Icon = 10180536602,
+    LoadingTitle = "ARK",
+    LoadingSubtitle = "By zxkuhl",
+    Theme = "Default",
+    ToggleUIKeybind = "K",
+
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "ARK_AC",
+        FileName = "ARK_HUB"
+    },
+
+    Discord = {
+        Enabled = true,
+        Invite = "KPUPp4m9pJ",
+        RememberJoins = true
+    },
+
+    KeySystem = true,
+    KeySettings = {
+        Title = "KEY",
+        Subtitle = "Enter key",
+        Note = "Get key in Discord",
+        FileName = "KEY_FILE",
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = {"Jcheeks130"}
+    }
+})
+
+----------------------------------------------------
+---------------------- MAIN TAB --------------------
+----------------------------------------------------
+
+local MainTab = Window:CreateTab("MAIN", 10180536602)
+local MainSection = MainTab:CreateSection("MAIN FEATURES")
+
+-- Infinite Yield
+MainTab:CreateButton({
+    Name = "Infinite Yield",
+    SectionParent = MainSection,
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end
+})
+
+-- Fly
+MainTab:CreateButton({
+    Name = "Fly",
+    SectionParent = MainSection,
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
+    end
+})
+
+-- Dark Dex
+MainTab:CreateButton({
+    Name = "Dark Dex",
+    SectionParent = MainSection,
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/memeenjoyer43/darkdex/refs/heads/main/script"))()
+    end
+})
+
+----------------------------------------------------
+----------------------- ESP ------------------------
+----------------------------------------------------
+
+_G.ARK_ESP_ENABLED = false
+local ESP_Holder
+
+local function HardKillESP()
+    if ESP_Holder then
+        ESP_Holder:Destroy()
+        ESP_Holder = nil
+    end
+end
+
+local function StartESP()
+    local Players = game:GetService("Players")
+    local plr = Players.LocalPlayer
+
+    if not ESP_Holder then
+        ESP_Holder = Instance.new("Folder", game.CoreGui)
+        ESP_Holder.Name = "ESP"
+    end
+
+    spawn(function()
+        while task.wait() and _G.ARK_ESP_ENABLED do
+            for i, v in pairs(Players:GetPlayers()) do
+                if v ~= plr and v.Character then
+                    if not v.Character:FindFirstChild("GetReal") then
+                        local highlight = Instance.new("Highlight")
+                        highlight.RobloxLocked = true
+                        highlight.Name = "GetReal"
+                        highlight.Adornee = v.Character
+                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        highlight.FillColor = (_G.UseTeamColor and v.TeamColor.Color)
+                            or ((plr.TeamColor == v.TeamColor) and _G.FriendColor or _G.EnemyColor)
+                        highlight.Parent = v.Character
+                    else
+                        v.Character.GetReal.FillColor =
+                            (_G.UseTeamColor and v.TeamColor.Color)
+                            or ((plr.TeamColor == v.TeamColor) and _G.FriendColor or _G.EnemyColor)
+                    end
+                end
+            end
+        end
+    end)
+end
+
+MainTab:CreateToggle({
+    Name = "ESP",
+    CurrentValue = false,
+    SectionParent = MainSection,
+    Flag = "ESP_TOGGLE",
+    Callback = function(v)
+        _G.ARK_ESP_ENABLED = v
+        if v then
+            _G.FriendColor = Color3.fromRGB(0, 0, 255)
+            _G.EnemyColor = Color3.fromRGB(255, 0, 0)
+            _G.UseTeamColor = true
+            StartESP()
+        else
+            HardKillESP()
+        end
+    end
+})
+
+----------------------------------------------------
+--------------- LOCAL PLAYER TAB -------------------
+----------------------------------------------------
+
+local LocalTab = Window:CreateTab("LOCAL PLAYER", 10180536602)
+local LPSection = LocalTab:CreateSection("Player Mods")
+
+LocalTab:CreateSlider({
+    Name = "Walk Speed",
+    Range = {16, 200},
+    Increment = 1,
+    CurrentValue = 16,
+    SectionParent = LPSection,
+    Flag = "WALKSPEED",
+    Callback = function(v)
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
+    end
+})
+
+LocalTab:CreateSlider({
+    Name = "Jump Power",
+    Range = {50, 300},
+    Increment = 1,
+    CurrentValue = 50,
+    SectionParent = LPSection,
+    Flag = "JUMPPOWER",
+    Callback = function(v)
+        game.Players.LocalPlayer.Character.Humanoid.JumpPower = v
+    end
+})
+
+LocalTab:CreateToggle({
+    Name = "God Mode",
+    CurrentValue = false,
+    SectionParent = LPSection,
+    Flag = "GODMODE",
+    Callback = function(v)
+        local h = game.Players.LocalPlayer.Character.Humanoid
+        if v then
+            h.MaxHealth = math.huge
+            h.Health = math.huge
+        else
+            h.MaxHealth = 100
+            h.Health = 100
+        end
+    end
+})
+
+LocalTab:CreateButton({
+    Name = "Infinite Jump",
+    SectionParent = LPSection,
+    Callback = function()
+        loadstring(game:HttpGet("https://obj.wearedevs.net/2/scripts/Infinite%20Jump.lua"))()
+    end
+})
+
+LocalTab:CreateButton({
+    Name = "Become Invisible",
+    SectionParent = LPSection,
+    Callback = function()
+        loadstring(game:HttpGet('https://pastebin.com/raw/3Rnd9rHf'))()
+    end
+})
+
+----------------------------------------------------
+------------------ TOOLS TAB -----------------------
+----------------------------------------------------
+
+local ToolsTab = Window:CreateTab("TOOLS", 10180536602)
+local ToolsSection = ToolsTab:CreateSection("Utilities")
+
+ToolsTab:CreateButton({
+    Name = "Server Hop",
+    SectionParent = ToolsSection,
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/LeoKholYt/roblox/main/lk_serverhop.lua"))():Teleport(game.PlaceId)
+    end
+})
+
+ToolsTab:CreateButton({
+    Name = "Anti AFK",
+    SectionParent = ToolsSection,
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/evxncodes/mainroblox/main/anti-afk"))()
+    end
+})
+
+ToolsTab:CreateButton({
+    Name = "Player Info (Console)",
+    SectionParent = ToolsSection,
+    Callback = function()
+        print("----- PLAYER INFO START -----")
+        for i, v in pairs(game.Players:GetPlayers()) do
+            print("DisplayName:", v.DisplayName)
+            print("Username:", v.Name)
+            if v.Character and v.Character:FindFirstChild("Humanoid") then
+                print("Health:", v.Character.Humanoid.Health)
+                print("WalkSpeed:", v.Character.Humanoid.WalkSpeed)
+                print("JumpPower:", v.Character.Humanoid.JumpPower)
+            else
+                print("Character data unavailable")
+            end
+            print("UserId:", v.UserId)
+            print("Account Age:", v.AccountAge)
+            print("----------------------------------------")
+            task.wait(0.5)
+        end
+        print("----- PLAYER INFO END -----")
+    end
+})
+
+ToolsTab:CreateButton({
+    Name = "Open Teleport Menu",
+    SectionParent = ToolsSection,
+    Callback = function()
+        loadstring(game:HttpGet("https://pastebin.com/raw/YourTeleportGUIScript"))()
+    end
+})
+
+----------------------------------------------------
+-------------------- INFO TAB ----------------------
+----------------------------------------------------
+
+local InfoTab = Window:CreateTab("INFO", 10180536602)
+local InfoSection = InfoTab:CreateSection("Information")
+
+InfoTab:CreateLabel("Current Version: 1.0")
+InfoTab:CreateLabel("Update Catalog: No updates yet.")
+
+InfoTab:CreateButton({
+    Name = "Join Discord",
+    SectionParent = InfoSection,
+    Callback = function()
+        setclipboard("https://discord.gg/KPUPp4m9pJ")
+        Rayfield:Notify({
+            Title = "Discord",
+            Content = "Discord link copied!",
+            Duration = 8,
+            Image = 8248378219
+        })
+    end
+})
+
+----------------------------------------------------
+------------------ VISUALS TAB --------------------
+----------------------------------------------------
+
+local VisualsTab = Window:CreateTab("VISUALS", 10180536602)
+local VisualsSection = VisualsTab:CreateSection("Visual Mods")
+
+-- Highlights Toggle
+VisualsTab:CreateToggle({
+    Name = "Highlights",
+    CurrentValue = false,
+    SectionParent = VisualsSection,
+    Flag = "HIGHLIGHTS_TOGGLE",
+    Callback = function(v)
+        local Players = game:GetService("Players")
+        local plr = Players.LocalPlayer
+
+        for i, target in pairs(Players:GetPlayers()) do
+            if target ~= plr and target.Character then
+                local highlight = target.Character:FindFirstChild("Highlight")
+                if v then
+                    if not highlight then
+                        highlight = Instance.new("Highlight")
+                        highlight.Name = "Highlight"
+                        highlight.Adornee = target.Character
+                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                        highlight.Parent = target.Character
+                    end
+                else
+                    if highlight then
+                        highlight:Destroy()
+                    end
+                end
+            end
+        end
+    end
+})
+
+-- Full Bright Toggle
+VisualsTab:CreateToggle({
+    Name = "Full Bright",
+    CurrentValue = false,
+    SectionParent = VisualsSection,
+    Flag = "FULLBRIGHT_TOGGLE",
+    Callback = function(v)
+        local lighting = game:GetService("Lighting")
+        if v then
+            lighting.Ambient = Color3.new(1,1,1)
+            lighting.Brightness = 2
+            lighting.GlobalShadows = false
+        else
+            lighting.Ambient = Color3.fromRGB(128,128,128)
+            lighting.Brightness = 1
+            lighting.GlobalShadows = true
+        end
+    end
+})
+
+-- Remove Fog Toggle
+VisualsTab:CreateToggle({
+    Name = "Remove Fog",
+    CurrentValue = false,
+    SectionParent = VisualsSection,
+    Flag = "REMOVEFOG_TOGGLE",
+    Callback = function(v)
+        local lighting = game:GetService("Lighting")
+        if v then
+            lighting.FogEnd = 100000
+            lighting.FogStart = 0
+        else
+            lighting.FogEnd = 1000
+            lighting.FogStart = 0
+        end
+    end
+})
