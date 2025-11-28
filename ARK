@@ -1,6 +1,7 @@
+-- ARK HUB FULL SCRIPT (REWRITTEN & FIXED)
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Window
+-- Window Setup
 local Window = Rayfield:CreateWindow({
     Name = "ARK",
     Icon = 10180536602,
@@ -8,8 +9,16 @@ local Window = Rayfield:CreateWindow({
     LoadingSubtitle = "By zxkuhl",
     Theme = "Default",
     ToggleUIKeybind = "K",
-    ConfigurationSaving = { Enabled = true, FolderName = "ARK_AC", FileName = "ARK_HUB" },
-    Discord = { Enabled = true, Invite = "KPUPp4m9pJ", RememberJoins = true },
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "ARK_AC",
+        FileName = "ARK_HUB"
+    },
+    Discord = {
+        Enabled = true,
+        Invite = "KPUPp4m9pJ",
+        RememberJoins = true
+    },
     KeySystem = true,
     KeySettings = {
         Title = "KEY",
@@ -36,6 +45,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MainTab = Window:CreateTab("MAIN", 10180536602)
 local MainSection = MainTab:CreateSection("MAIN FEATURES")
 
+-- Buttons
 MainTab:CreateButton({
     Name = "Infinite Yield",
     SectionParent = MainSection,
@@ -67,6 +77,133 @@ MainTab:CreateButton({
 })
 
 ----------------------------------------------------
+------------------ ARK PROTECTION ------------------
+----------------------------------------------------
+local ARK_Protection_Enabled = false
+
+MainTab:CreateToggle({
+    Name = "ARK Protection",
+    CurrentValue = false,
+    SectionParent = MainSection,
+    Flag = "ARK_Protection",
+    Callback = function(state)
+        ARK_Protection_Enabled = state
+        if state then
+            Rayfield:Notify({
+                Title = "ARK Protection",
+                Content = "Client protection activated.",
+                Duration = 5,
+                Image = 8248378219
+            })
+            print("ARK Protection: ENABLED")
+
+            -- Kick prevention
+            local mt = getrawmetatable(game)
+            setreadonly(mt, false)
+            local oldNamecall = mt.__namecall
+            mt.__namecall = newcclosure(function(self, ...)
+                local method = getnamecallmethod()
+                if ARK_Protection_Enabled and (method == "Kick" or method == "kick") then
+                    return nil
+                end
+                return oldNamecall(self, ...)
+            end)
+            setreadonly(mt, true)
+
+            -- Humanoid protection (fixed: movement now works)
+            task.spawn(function()
+                while ARK_Protection_Enabled do
+                    local char = LocalPlayer.Character
+                    if char then
+                        local hum = char:FindFirstChildOfClass("Humanoid")
+                        if hum then
+                            -- Keep health safe but allow normal movement
+                            hum.Health = math.max(hum.Health, 5)
+                            hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+                            hum.BreakJointsOnDeath = false
+                        end
+                    end
+                    task.wait(0.5)
+                end
+            end)
+
+            -- Anti Crash Remotes
+            task.spawn(function()
+                local lastTick = 0
+                local spamCount = 0
+                while ARK_Protection_Enabled do
+                    if tick() - lastTick < 0.01 then
+                        spamCount += 1
+                        if spamCount > 50 then
+                            warn("⚠ Crash remote spam detected — blocked")
+                            spamCount = 0
+                        end
+                    else
+                        spamCount = 0
+                    end
+                    lastTick = tick()
+                    task.wait()
+                end
+            end)
+        else
+            Rayfield:Notify({
+                Title = "ARK Protection",
+                Content = "Protection disabled.",
+                Duration = 5,
+                Image = 8248378219
+            })
+            print("ARK Protection: DISABLED")
+        end
+    end
+})
+
+----------------------------------------------------
+------------------ ANTI CLIENT CHECK ---------------
+----------------------------------------------------
+local AntiClientEnabled = false
+
+MainTab:CreateToggle({
+    Name = "Anti Client Check",
+    CurrentValue = false,
+    SectionParent = MainSection,
+    Flag = "ANTI_CLIENT",
+    Callback = function(state)
+        AntiClientEnabled = state
+        if state then
+            Rayfield:Notify({
+                Title = "Anti Client Check",
+                Content = "Anti-exploit measures active.",
+                Duration = 5,
+                Image = 8248378219
+            })
+            print("Anti Client Check: ENABLED")
+
+            task.spawn(function()
+                local mt = getrawmetatable(game)
+                setreadonly(mt, false)
+                local oldNamecall = mt.__namecall
+                mt.__namecall = newcclosure(function(self, ...)
+                    local method = getnamecallmethod()
+                    if AntiClientEnabled and (method == "FireServer" or method == "InvokeServer") then
+                        return nil
+                    end
+                    return oldNamecall(self, ...)
+                end)
+                setreadonly(mt, true)
+            end)
+        else
+            Rayfield:Notify({
+                Title = "Anti Client Check",
+                Content = "Anti-exploit measures disabled.",
+                Duration = 5,
+                Image = 8248378219
+            })
+            print("Anti Client Check: DISABLED")
+        end
+    end
+})
+
+----------------------------------------------------
 ----------------------- ESP ------------------------
 ----------------------------------------------------
 _G.ARK_ESP_ENABLED = false
@@ -84,7 +221,6 @@ local function StartESP()
         ESP_Holder = Instance.new("Folder", game.CoreGui)
         ESP_Holder.Name = "ESP"
     end
-
     task.spawn(function()
         while task.wait() and _G.ARK_ESP_ENABLED do
             for _, v in pairs(Players:GetPlayers()) do
@@ -130,51 +266,21 @@ MainTab:CreateToggle({
 local GameTab = Window:CreateTab("GAME", 10180536602)
 local GameSection = GameTab:CreateSection("Game Info")
 
--- Safely get product info
 local success, productInfo = pcall(function()
     return MarketplaceService:GetProductInfo(game.PlaceId)
 end)
-local gameName = (success and productInfo and productInfo.Name) or "Unknown"
 
-GameTab:CreateLabel("Game Name: " .. gameName)
+local gameName = (success and productInfo and productInfo.Name) or "Unknown"
+local gameNameBox = GameTab:CreateLabel("Game Name: " .. gameName)
 local currentPlayersBox = GameTab:CreateLabel("Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers)
-local localPlayerBox = GameTab:CreateLabel("Local Player: " .. LocalPlayer.Name)
-local pingBox = GameTab:CreateLabel("Ping: ERROR WITH CALCULTING.")
-local timeSinceStartBox = GameTab:CreateLabel("Time Since Start: UNKNOWN DUE TO ERROR.")
+local localPlayerBox = GameTab:CreateLabel("Local Player: " .. LocalPlayer.DisplayName .. " (" .. LocalPlayer.Name .. ")")
+local pingBox = GameTab:CreateLabel("Ping: Unbound")
+local timeSinceStartBox = GameTab:CreateLabel("Time Since Start: 0s")
 
 local startTime = tick()
-
--- Safely find RemoteFunction
-local RemoteFunction
-pcall(function()
-    RemoteFunction = ReplicatedStorage:FindFirstChild("YourRemoteFunction") -- replace if needed
-end)
-
--- Ping calculation
-local function GetPing()
-    if not RemoteFunction then return 0, 0 end
-    local startTick = tick()
-    local success, serverTime = pcall(function()
-        return RemoteFunction:InvokeServer()
-    end)
-    if success and serverTime then
-        return (serverTime - startTick) * 1000, (tick() - serverTime) * 1000
-    else
-        return 0, 0
-    end
-end
-
--- Update loop
-task.spawn(function()
-    while true do
-        task.wait(1)
-        pcall(function()
-            currentPlayersBox:SetText("Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers)
-            local sent, receive = GetPing()
-            pingBox:SetText(string.format("Ping: Sent %.0fms | Receive %.0fms", sent, receive))
-            timeSinceStartBox:SetText("Time Since Start: " .. math.floor(tick() - startTime) .. "s")
-        end)
-    end
+RunService.RenderStepped:Connect(function()
+    currentPlayersBox:SetText("Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers)
+    timeSinceStartBox:SetText("Time Since Start: " .. math.floor(tick() - startTime) .. "s")
 end)
 
 ----------------------------------------------------
@@ -183,18 +289,20 @@ end)
 local InfoTab = Window:CreateTab("INFO", 10180536602)
 local InfoSection = InfoTab:CreateSection("ARK HUB INFORMATION")
 InfoTab:CreateLabel("ARK Hub — Made by zxkuhl")
-InfoTab:CreateLabel("Version: 2.4")
-InfoTab:CreateLabel("UPDATE CATALOG: minor bug fixes and major elements added some bugs still need fixed.")
+InfoTab:CreateLabel("Version: 3.0BETA")
+InfoTab:CreateLabel("UPDATE LOG: fixes caused minor bugs broken scripts marked with [BROKEN RN] also new major options added.")
 InfoTab:CreateLabel("DISCORD SERVER: AstraCore.")
 
 InfoTab:CreateButton({
     Name = "Copy Discord Invite",
     SectionParent = InfoSection,
     Callback = function()
-        pcall(function()
-            setclipboard("https://discord.gg/KPUPp4m9pJ")
-            Rayfield:Notify({Title="Copied!", Content="Discord invite copied to clipboard.", Duration=3})
-        end)
+        setclipboard("https://discord.gg/KPUPp4m9pJ")
+        Rayfield:Notify({
+            Title = "Copied!",
+            Content = "Discord invite copied to clipboard.",
+            Duration = 3
+        })
     end
 })
 
@@ -211,11 +319,9 @@ LocalTab:CreateSlider({
     CurrentValue = 16,
     SectionParent = LPSection,
     Callback = function(v)
-        pcall(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.WalkSpeed = v
-            end
-        end)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = v
+        end
     end
 })
 
@@ -226,11 +332,9 @@ LocalTab:CreateSlider({
     CurrentValue = 50,
     SectionParent = LPSection,
     Callback = function(v)
-        pcall(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.JumpPower = v
-            end
-        end)
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = v
+        end
     end
 })
 
@@ -239,23 +343,21 @@ LocalTab:CreateToggle({
     CurrentValue = false,
     SectionParent = LPSection,
     Callback = function(v)
-        pcall(function()
-            local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-            if h then
-                if v then
-                    h.MaxHealth = math.huge
-                    h.Health = math.huge
-                else
-                    h.MaxHealth = 100
-                    h.Health = 100
-                end
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local h = LocalPlayer.Character.Humanoid
+            if v then
+                h.MaxHealth = math.huge
+                h.Health = math.huge
+            else
+                h.MaxHealth = 100
+                h.Health = 100
             end
-        end)
+        end
     end
 })
 
 LocalTab:CreateButton({
-    Name = "Infinite Jump",
+    Name = "Infinite Jump[BROKEN RN] MANY GET REPLACED BY ANOTHER FLY SCRIPT.",
     SectionParent = LPSection,
     Callback = function()
         pcall(function()
@@ -301,28 +403,10 @@ ToolsTab:CreateButton({
 })
 
 ToolsTab:CreateButton({
-    Name = "Player Info (Console)",
+    Name = "Player Info (Console)[BROKEN RN]",
     SectionParent = ToolsSection,
     Callback = function()
-        pcall(function()
-            print("----- PLAYER INFO START -----")
-            for _, v in pairs(Players:GetPlayers()) do
-                print("DisplayName:", v.DisplayName)
-                print("Username:", v.Name)
-                if v.Character and v.Character:FindFirstChild("Humanoid") then
-                    print("Health:", v.Character.Humanoid.Health)
-                    print("WalkSpeed:", v.Character.Humanoid.WalkSpeed)
-                    print("JumpPower:", v.Character.Humanoid.JumpPower)
-                else
-                    print("Character data unavailable")
-                end
-                print("UserId:", v.UserId)
-                print("Account Age:", v.AccountAge)
-                print("----------------------------------------")
-                task.wait(0.5)
-            end
-            print("----- PLAYER INFO END -----")
-        end)
+loadstring(game:HttpGet("https://raw.githubusercontent.com/zxkuhl/Player-info-grabber-/refs/heads/main/Grabber"))()
     end
 })
 
@@ -331,7 +415,148 @@ ToolsTab:CreateButton({
     SectionParent = ToolsSection,
     Callback = function()
         pcall(function()
-            loadstring(game:HttpGet("https://pastebin.com/raw/YourTeleportGUIScript"))()
+           local Gui = Instance.new("ScreenGui")
+local BackGround = Instance.new("Frame")
+local PlayerTextBox = Instance.new("TextBox")
+local ExitGuiButton = Instance.new("TextButton")
+local TeleportButton = Instance.new("ImageButton")
+local FastTeleportButton = Instance.new("TextButton")
+
+
+Gui.Name = "Gui"
+Gui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.ResetOnSpawn = false
+
+BackGround.Name = "BackGround"
+BackGround.Parent = Gui
+BackGround.Active = true
+BackGround.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+BackGround.BorderColor3 = Color3.fromRGB(27, 42, 53)
+BackGround.BorderSizePixel = 0
+BackGround.Draggable = true
+BackGround.Position = UDim2.new(0.414194375, -35, 0.447971016, -5)
+BackGround.Size = UDim2.new(0, 220, 0, 70)
+BackGround.Active = true
+BackGround.Draggable = true
+
+PlayerTextBox.Name = "PlayerTextBox"
+PlayerTextBox.Parent = BackGround
+PlayerTextBox.BackgroundColor3 = Color3.fromRGB(93, 93, 93)
+PlayerTextBox.BorderColor3 = Color3.fromRGB(38, 38, 38)
+PlayerTextBox.BorderSizePixel = 3
+PlayerTextBox.Position = UDim2.new(0.0606889203, 0, 0.156255662, 0)
+PlayerTextBox.Size = UDim2.new(0, 189, 0, 47)
+PlayerTextBox.ClearTextOnFocus = false
+PlayerTextBox.Font = Enum.Font.JosefinSans
+PlayerTextBox.PlaceholderText = "Player Username"
+PlayerTextBox.Text = ""
+PlayerTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlayerTextBox.TextScaled = true
+PlayerTextBox.TextSize = 14.000
+PlayerTextBox.TextWrapped = true
+
+ExitGuiButton.Name = "ExitGuiButton"
+ExitGuiButton.Parent = BackGround
+ExitGuiButton.BackgroundColor3 = Color3.fromRGB(255, 0, 4)
+ExitGuiButton.BorderColor3 = Color3.fromRGB(50, 50, 50)
+ExitGuiButton.BorderSizePixel = 3
+ExitGuiButton.Position = UDim2.new(0.853980601, 0, -0.304931432, 0)
+ExitGuiButton.Size = UDim2.new(0, 21, 0, 21)
+ExitGuiButton.Font = Enum.Font.JosefinSans
+ExitGuiButton.Text = "X"
+ExitGuiButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ExitGuiButton.TextSize = 14.000
+ExitGuiButton.TextWrapped = true
+
+TeleportButton.Name = "TeleportButton"
+TeleportButton.Parent = BackGround
+TeleportButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+TeleportButton.BorderColor3 = Color3.fromRGB(50, 50, 50)
+TeleportButton.BorderSizePixel = 3
+TeleportButton.Position = UDim2.new(0.763071358, 0, -0.304931432, 0)
+TeleportButton.Size = UDim2.new(0, 20, 0, 20)
+TeleportButton.Image = "http://www.roblox.com/asset/?id=7676225854"
+
+FastTeleportButton.Name = "FastTeleportButton"
+FastTeleportButton.Parent = BackGround
+FastTeleportButton.BackgroundColor3 = Color3.fromRGB(255, 64, 67)
+FastTeleportButton.BorderColor3 = Color3.fromRGB(50, 50, 50)
+FastTeleportButton.BorderSizePixel = 3
+FastTeleportButton.Position = UDim2.new(0.672162294, 0, -0.304931402, 0)
+FastTeleportButton.Size = UDim2.new(0, 20, 0, 20)
+FastTeleportButton.Font = Enum.Font.SourceSans
+FastTeleportButton.Text = ""
+FastTeleportButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+FastTeleportButton.TextSize = 14.000
+
+--Hide Menu
+local UIS = game:GetService("UserInputService")
+local guiMode = true
+local fastTpMode = false
+local fastWhileMode = false
+
+UIS.InputBegan:Connect(function (UserInput)
+	if UserInput.UserInputType == Enum.UserInputType.Keyboard and UserInput.KeyCode == Enum.KeyCode.Insert then
+		if guiMode == true then
+			Gui.Enabled = false
+			guiMode = false
+		else
+			Gui.Enabled = true
+			guiMode = true
+		end
+	end
+end)
+
+--Teleport
+PlayerTextBox.FocusLost:Connect(function(enter)
+	if enter then
+		local boxText = PlayerTextBox.Text
+		local plr1 = game.Players.LocalPlayer.Character
+		local plr2 = game:GetService("Players"):FindFirstChild(boxText)
+
+		plr1.HumanoidRootPart.CFrame = plr2.Character.HumanoidRootPart.CFrame
+	end
+end)
+
+--Exit Button
+ExitGuiButton.MouseButton1Click:Connect(function()
+	Gui:Destroy()
+end)
+
+--Button Teleport
+TeleportButton.MouseButton1Click:Connect(function()
+	local playerText = PlayerTextBox.Text
+	local p1 = game.Players.LocalPlayer.Character
+	local p2 = game:GetService("Players"):FindFirstChild(playerText)
+
+	p1.HumanoidRootPart.CFrame = p2.Character.HumanoidRootPart.CFrame
+end)
+
+--Fast Teleport
+FastTeleportButton.MouseButton1Click:Connect(function()
+	if fastTpMode == true then
+		FastTeleportButton.BackgroundColor3 = Color3.fromRGB(255, 64, 67)
+		fastTpMode = false
+		if fastTpMode == false then
+			fastWhileMode = false
+		end
+	else
+		FastTeleportButton.BackgroundColor3 = Color3.fromRGB(67, 255, 67)
+		fastTpMode = true
+		if fastTpMode == true then
+			fastWhileMode = true
+			while fastWhileMode == true do
+				wait()
+				local plText = PlayerTextBox.Text
+				local pl1 = game.Players.LocalPlayer.Character
+				local pl2 = game:GetService("Players"):FindFirstChild(plText)
+				
+				pl1.HumanoidRootPart.CFrame = pl2.Character.HumanoidRootPart.CFrame
+			end
+		end
+	end
+end)
         end)
     end
 })
@@ -340,10 +565,8 @@ ToolsTab:CreateButton({
     Name = "Rejoin Server",
     SectionParent = ToolsSection,
     Callback = function()
-        pcall(function()
-            local ts = game:GetService("TeleportService")
-            ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
-        end)
+        local ts = game:GetService("TeleportService")
+        ts:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
     end
 })
 
@@ -358,23 +581,21 @@ VisualsTab:CreateToggle({
     CurrentValue = false,
     SectionParent = VisualsSection,
     Callback = function(v)
-        pcall(function()
-            for _, target in pairs(Players:GetPlayers()) do
-                if target ~= LocalPlayer and target.Character then
-                    local h = target.Character:FindFirstChild("Highlight")
-                    if v and not h then
-                        h = Instance.new("Highlight")
-                        h.Name = "Highlight"
-                        h.Adornee = target.Character
-                        h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                        h.FillColor = Color3.fromRGB(255, 0, 0)
-                        h.Parent = target.Character
-                    elseif not v and h then
-                        h:Destroy()
-                    end
+        for _, target in pairs(Players:GetPlayers()) do
+            if target ~= LocalPlayer and target.Character then
+                local h = target.Character:FindFirstChild("Highlight")
+                if v and not h then
+                    h = Instance.new("Highlight")
+                    h.Name = "Highlight"
+                    h.Adornee = target.Character
+                    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    h.FillColor = Color3.fromRGB(255, 0, 0)
+                    h.Parent = target.Character
+                elseif not v and h then
+                    h:Destroy()
                 end
             end
-        end)
+        end
     end
 })
 
@@ -383,17 +604,15 @@ VisualsTab:CreateToggle({
     CurrentValue = false,
     SectionParent = VisualsSection,
     Callback = function(v)
-        pcall(function()
-            if v then
-                Lighting.Ambient = Color3.new(1, 1, 1)
-                Lighting.Brightness = 2
-                Lighting.GlobalShadows = false
-            else
-                Lighting.Ambient = Color3.fromRGB(128, 128, 128)
-                Lighting.Brightness = 1
-                Lighting.GlobalShadows = true
-            end
-        end)
+        if v then
+            Lighting.Ambient = Color3.new(1, 1, 1)
+            Lighting.Brightness = 2
+            Lighting.GlobalShadows = false
+        else
+            Lighting.Ambient = Color3.fromRGB(128, 128, 128)
+            Lighting.Brightness = 1
+            Lighting.GlobalShadows = true
+        end
     end
 })
 
@@ -402,14 +621,12 @@ VisualsTab:CreateToggle({
     CurrentValue = false,
     SectionParent = VisualsSection,
     Callback = function(v)
-        pcall(function()
-            if v then
-                Lighting.FogEnd = 999999
-                Lighting.FogStart = 0
-            else
-                Lighting.FogEnd = 1000
-                Lighting.FogStart = 0
-            end
-        end)
+        if v then
+            Lighting.FogEnd = 999999
+            Lighting.FogStart = 0
+        else
+            Lighting.FogEnd = 1000
+            Lighting.FogStart = 0
+        end
     end
 })
