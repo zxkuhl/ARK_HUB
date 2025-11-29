@@ -1,3 +1,33 @@
+
+--// ARK Hub Anti-Piracy (Two Codes, One File + Kick Player)
+
+-- Fetch both codes from one GitHub file
+local success, remoteData = pcall(function()
+    return game:HttpGet("https://raw.githubusercontent.com/zxkuhl/ARK_HUB/main/ark_codes.txt")
+end)
+
+-- Local codes (must EXACT match)
+local localA = "19582749284729174918274819274"
+local localB = "92837492837492837492837492837"
+
+-- Parse file (expects 2 lines)
+local remoteA, remoteB
+if success and remoteData then
+    local lines = remoteData:split("\n")
+    remoteA = lines[1]
+    remoteB = lines[2]
+end
+
+local Player = game:GetService("Players").LocalPlayer
+
+-- If wrong, missing, changed, or edited → kick the player
+if not success or remoteA ~= localA or remoteB ~= localB then
+    Player:Kick("PIRATING IS ILLEGAL\nIS UP TO 250,000 DOLLARS AND 5 YEARS IN JAIL.")
+    while true do task.wait() end
+end
+
+-- If passed, script continues normally...
+
 -- ARK HUB FULL SCRIPT (REWRITTEN & FIXED)
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -343,7 +373,7 @@ end)
 
 local gameName = (success and productInfo and productInfo.Name) or "Unknown"
 local gameNameBox = GameTab:CreateLabel("Game Name: " .. gameName)
-local currentPlayersBox = GameTab:CreateLabel("[DUR TO ERRORS ITS NUMBER OF PLAYERS FROM THE MOMENT OF SERVER JOIN] Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers)
+local currentPlayersBox = GameTab:CreateLabel("[moment of local player join] Players: " .. #Players:GetPlayers() .. "/" .. Players.MaxPlayers)
 local localPlayerBox = GameTab:CreateLabel("Local Player: " .. LocalPlayer.DisplayName .. " (" .. LocalPlayer.Name .. ")")
 local pingBox = GameTab:CreateLabel("Ping: Unbound")
 local timeSinceStartBox = GameTab:CreateLabel("Time Since Start: 0s")
@@ -360,9 +390,9 @@ end)
 local InfoTab = Window:CreateTab("INFO", 10180536602)
 local InfoSection = InfoTab:CreateSection("ARK HUB INFORMATION")
 InfoTab:CreateLabel("ARK Hub — Made by zxkuhl")
-InfoTab:CreateLabel("Version: 3.0")
-InfoTab:CreateLabel("UPDATE LOG: MAJOR BUG FIXES, MAJOR FEATURES UPDATE, MORE GUI OPTIONS AND WAY MORE COMING IN THE SMALL BUG PATCHES ASWELL AS ADDING FUNCTIONS")
-InfoTab:CreateLabel("DISCORD SERVER: AstraCore.")
+InfoTab:CreateLabel("Version: 3.2")
+InfoTab:CreateLabel("UPDATE LOG: PLAYER INFO GRABBER IS NOW WORKING AGAIN WITH SOME SMALL BUG FIXES ALSO DISCORD SERVER NAME CHANGE.")
+InfoTab:CreateLabel("DISCORD SERVER: KittyScripts.")
 
 InfoTab:CreateButton({
     Name = "Copy Discord Invite",
@@ -375,6 +405,40 @@ InfoTab:CreateButton({
             Duration = 3
         })
     end
+})
+
+local SocialsSection = InfoTab:CreateSection("SOCIALS")
+
+InfoTab:CreateButton({
+    Name = "TIKTOK[copy and paste]",
+    SectionParent = SocialsSection,
+    Callback = function()
+        setclipboard("https://www.tiktok.com/@zxkuhl")
+
+        if syn and syn.request then
+            syn.request({Url = "https://www.tiktok.com/@zxkuhl", Method = "GET"})
+        elseif request then
+            request({Url = "https://www.tiktok.com/@zxkuhl", Method = "GET"})
+        elseif http and http.request then
+            http.request({Url = "https://www.tiktok.com/@zxkuhl", Method = "GET"})
+        end
+    end
+})
+
+InfoTab:CreateButton({
+    Name = "ROBLOX[copy and paste]",
+    SectionParent = SocialsSection,
+    Callback = function()
+        setclipboard("https://www.roblox.com/users/1885859525/profile")
+    end
+})
+
+InfoTab:CreateButton({
+    Name = "YOUTUBE [copy and paste]",
+    SectionParent = SocialsSection,
+    Callback = function()
+        setclipboard("https://www.youtube.com/@zxkuhl")
+    end,
 })
 
 ----------------------------------------------------
@@ -513,7 +577,7 @@ ToolsTab:CreateButton({
 })
 
 ToolsTab:CreateButton({
-    Name = "Player Info (Console)[FIXED BUT REQUIRED TO TURN OFF ALL ERRORS IN CONSOLE] {CURRENTLY EXPERIENCING CALL BACK ERROR, BROKEN RN}",
+    Name = "Player Info (Console)",
     SectionParent = ToolsSection,
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/zxkuhl/Player-info-grabber-/main/Grabber"))()
@@ -800,7 +864,7 @@ VisualsTab:CreateToggle({
 })
 
 -- TROLL TAB
-local TrollTab = Window:CreateTab("Troll", 10180536602) -- Icon optional
+local TrollTab = Window:CreateTab("TROLL", 10180536602) -- Icon optional
 
 local BangButton = TrollTab:CreateButton({
     Name = "Load Bang UI",
