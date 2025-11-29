@@ -1,3 +1,4 @@
+_G.ARK_ANTI_PIRATE = true
 
 --// ARK Hub Anti-Piracy (Two Codes, One File + Kick Player)
 
@@ -72,8 +73,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 ----------------------------------------------------
 ---------------------- MAIN TAB --------------------
 ----------------------------------------------------
-local MainTab = Window:CreateTab("MAIN", 10180536602)
+local MainTab = Window:CreateTab("MAIN", 4483362458)
 local MainSection = MainTab:CreateSection("MAIN FEATURES")
+
+if not _G.ARK_ANTI_PIRATE then
+    local Player = game:GetService("Players").LocalPlayer
+    Player:Kick("PIRATING IS ILLEGAL")
+    while true do end
+end
 
 -- Buttons
 MainTab:CreateButton({
@@ -105,6 +112,8 @@ MainTab:CreateButton({
         end)
     end
 })
+
+
 
 ----------------------------------------------------
 ------------------ ARK PROTECTION ------------------
@@ -349,8 +358,14 @@ MainTab:CreateToggle({
 ----------------------------------------------------
 ---------------------- GAME TAB --------------------
 ----------------------------------------------------
-local GameTab = Window:CreateTab("GAME", 10180536602)
+local GameTab = Window:CreateTab("GAME", 4483362458 )
 local GameSection = GameTab:CreateSection("Game Info")
+
+if not _G.ARK_ANTI_PIRATE then
+    local Player = game:GetService("Players").LocalPlayer
+    Player:Kick("PIRATING IS ILLEGAL")
+    while true do end
+end
 
 local Toggle = GameTab:CreateToggle({
     Name = "Player /kick/ban/join/leave/ Notifications",
@@ -387,10 +402,18 @@ end)
 ----------------------------------------------------
 ---------------------- INFO TAB --------------------
 ----------------------------------------------------
-local InfoTab = Window:CreateTab("INFO", 10180536602)
+
+local InfoTab = Window:CreateTab("INFO", 4483362458)
 local InfoSection = InfoTab:CreateSection("ARK HUB INFORMATION")
-InfoTab:CreateLabel("ARK Hub — Made by zxkuhl")
-InfoTab:CreateLabel("Version: 3.2")
+
+if not _G.ARK_ANTI_PIRATE then
+    local Player = game:GetService("Players").LocalPlayer
+    Player:Kick("PIRATING IS ILLEGAL")
+    while true do end
+end
+
+InfoTab:CreateLabel("ARK Hub — Made by zxkuhl PIRATING IS ILLEGAL DO NOT COPY MY WORK MAKE YOUR OWN!")
+InfoTab:CreateLabel("Version: 3.3")
 InfoTab:CreateLabel("UPDATE LOG: PLAYER INFO GRABBER IS NOW WORKING AGAIN WITH SOME SMALL BUG FIXES ALSO DISCORD SERVER NAME CHANGE.")
 InfoTab:CreateLabel("DISCORD SERVER: KittyScripts.")
 
@@ -444,8 +467,14 @@ InfoTab:CreateButton({
 ----------------------------------------------------
 --------------- LOCAL PLAYER TAB -------------------
 ----------------------------------------------------
-local LocalTab = Window:CreateTab("LOCAL PLAYER", 10180536602)
+local LocalTab = Window:CreateTab("LOCAL PLAYER", 4483362458)
 local LPSection = LocalTab:CreateSection("Player Mods")
+
+if not _G.ARK_ANTI_PIRATE then
+    local Player = game:GetService("Players").LocalPlayer
+    Player:Kick("PIRATING IS ILLEGAL")
+    while true do end
+end
 
 local AntiRagdollEnabled = false
 
@@ -546,8 +575,14 @@ LocalTab:CreateButton({
 ----------------------------------------------------
 ------------------ TOOLS TAB -----------------------
 ----------------------------------------------------
-local ToolsTab = Window:CreateTab("TOOLS", 10180536602)
+local ToolsTab = Window:CreateTab("TOOLS", 4483362458)
 local ToolsSection = ToolsTab:CreateSection("Utilities")
+
+if not _G.ARK_ANTI_PIRATE then
+    local Player = game:GetService("Players").LocalPlayer
+    Player:Kick("PIRATING IS ILLEGAL")
+    while true do end
+end
 
 ToolsTab:CreateButton({
     Name = "Spectate Player",
@@ -747,8 +782,14 @@ ToolsTab:CreateButton({
 ----------------------------------------------------
 ------------------ VISUALS TAB ---------------------
 ----------------------------------------------------
-local VisualsTab = Window:CreateTab("VISUALS", 10180536602)
+local VisualsTab = Window:CreateTab("VISUALS", 4483362458)
 local VisualsSection = VisualsTab:CreateSection("Visual Mods")
+
+if not _G.ARK_ANTI_PIRATE then
+    local Player = game:GetService("Players").LocalPlayer
+    Player:Kick("PIRATING IS ILLEGAL")
+    while true do end
+end
 
 local DayToggleEnabled = false
 local NightToggleEnabled = false
@@ -864,7 +905,7 @@ VisualsTab:CreateToggle({
 })
 
 -- TROLL TAB
-local TrollTab = Window:CreateTab("TROLL", 10180536602) -- Icon optional
+local TrollTab = Window:CreateTab("TROLL", 4483362458) -- Icon optional
 
 local BangButton = TrollTab:CreateButton({
     Name = "Load Bang UI",
