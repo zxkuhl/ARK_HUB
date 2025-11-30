@@ -1,0 +1,190 @@
+----------------------------------------------------
+        -- DESTROY RAYFIELD & OTHER UI
+        ----------------------------------------------------
+        pcall(function()
+            for _, v in pairs(game.CoreGui:GetChildren()) do
+                if v.Name:find("Rayfield") or v:IsA("ScreenGui") then
+                    v:Destroy()
+                end
+            end
+        end)
+
+        ----------------------------------------------------
+        -- DARK RED FILTER
+        ----------------------------------------------------
+        local Lighting = game:GetService("Lighting")
+        local CC = Instance.new("ColorCorrectionEffect", Lighting)
+        CC.TintColor = Color3.fromRGB(255, 0, 0)
+        CC.Brightness = -0.25
+        CC.Contrast = 1.1
+        CC.Saturation = -0.8
+
+        ----------------------------------------------------
+        -- DISTORTION EFFECT
+        ----------------------------------------------------
+        local Blur = Instance.new("BlurEffect", Lighting)
+        task.spawn(function()
+            while true do
+                Blur.Size = math.random(0, 6)
+                task.wait(0.2)
+            end
+        end)
+
+        ----------------------------------------------------
+        -- PLAYER + SHADOW SETUP
+        ----------------------------------------------------
+        local Players = game:GetService("Players")
+        local LocalPlayer = Players.LocalPlayer
+        local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+        local Shadow = Character:Clone()
+        Shadow.Parent = workspace
+        Shadow.Name = "ShadowClone"
+
+        for _, part in pairs(Shadow:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Color = Color3.fromRGB(0, 0, 0)
+                part.Material = Enum.Material.SmoothPlastic
+                part.Transparency = 0.5
+            elseif part:IsA("Decal") then
+                part.Transparency = 1
+            end
+        end
+
+        ----------------------------------------------------
+        -- SHADOW SOUNDS
+        ----------------------------------------------------
+        local TeleportSFX = Instance.new("Sound", Shadow:WaitForChild("HumanoidRootPart"))
+        TeleportSFX.SoundId = "rbxassetid://9066782653"
+        TeleportSFX.Volume = 3
+
+        local WhisperSFX = Instance.new("Sound", Shadow.HumanoidRootPart)
+        WhisperSFX.SoundId = "rbxassetid://9129778367"
+        WhisperSFX.Volume = 2
+
+        local StepsSFX = Instance.new("Sound", Shadow.HumanoidRootPart)
+        StepsSFX.SoundId = "rbxassetid://9118827660"
+        StepsSFX.Volume = 1
+
+        ----------------------------------------------------
+        -- HEARTBEAT
+        ----------------------------------------------------
+        local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+        local Heartbeat = Instance.new("Sound", PlayerGui)
+        Heartbeat.SoundId = "rbxassetid://1837635124"
+        Heartbeat.Volume = 2
+        Heartbeat.Looped = true
+        Heartbeat:Play()
+
+        ----------------------------------------------------
+        -- AGGRESSIVE SHADOW TELEPORT + LAG
+        ----------------------------------------------------
+        task.spawn(function()
+            local root = Character:WaitForChild("HumanoidRootPart")
+            while true do
+                task.wait(math.random(3,10)/10) -- 0.3 to 1 second
+
+                if root then
+                    -- Teleport Shadow very close
+                    local offset = Vector3.new(math.random(-2,2),0,math.random(-2,2))
+                    Shadow:PivotTo(root.CFrame * CFrame.new(offset))
+                    
+                    -- Semi-visible black
+                    for _, part in pairs(Shadow:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.Transparency = 0.5
+                        end
+                    end
+
+                    -- Shadow rotation jitter
+                    Shadow.HumanoidRootPart.CFrame *= CFrame.Angles(
+                        math.rad(math.random(-15,15)),
+                        math.rad(math.random(-25,25)),
+                        0
+                    )
+
+                    -- Play sounds
+                    TeleportSFX:Play()
+                    if math.random(1,2) == 1 then WhisperSFX:Play() end
+
+                    -- Lag spike
+                    local startTime = tick()
+                    while tick() - startTime < 1 do
+                        for i = 1, 1000000 do
+                            local x = math.sqrt(i)*math.random()
+                        end
+                        task.wait(0.01)
+                    end
+                end
+            end
+        end)
+
+        ----------------------------------------------------
+        -- SHADOW GROWS
+        ----------------------------------------------------
+        task.spawn(function()
+            while true do
+                task.wait(20)
+                for _, part in ipairs(Shadow:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        part.Size += Vector3.new(0.15, 0.15, 0.15)
+                    end
+                end
+            end
+        end)
+
+        ----------------------------------------------------
+        -- HEARTBEAT SPEED UP
+        ----------------------------------------------------
+        task.spawn(function()
+            for i = 1, 120 do
+                Heartbeat.PlaybackSpeed += 0.01
+                task.wait(1)
+            end
+        end)
+
+        ----------------------------------------------------
+        -- NULL CHAT MESSAGES
+        ----------------------------------------------------
+        local messages = {
+            "I see you.",
+            "There's no running.",
+            "You're not alone.",
+            "I'm coming for you."
+        }
+
+        task.spawn(function()
+            while true do
+                task.wait(math.random(6, 14))
+                game.StarterGui:SetCore("ChatMakeSystemMessage", {
+                    Text = "[null]: " .. messages[math.random(1, #messages)];
+                    Color = Color3.fromRGB(255, 0, 0);
+                    Font = Enum.Font.Code;
+                    TextSize = 20;
+                })
+            end
+        end)
+
+        ----------------------------------------------------
+        -- FINAL JUMPSCARE → CRASH
+        ----------------------------------------------------
+        task.delay(118, function()
+            local FlashGui = Instance.new("ScreenGui", PlayerGui)
+            local Img = Instance.new("ImageLabel", FlashGui)
+            Img.Size = UDim2.new(1,0,1,0)
+            Img.Image = "rbxassetid://9407437637"
+            Img.BackgroundTransparency = 1
+            Img.ImageTransparency = 1
+
+            local FinalSFX = Instance.new("Sound", FlashGui)
+            FinalSFX.SoundId = "rbxassetid://9129778367"
+            FinalSFX.Volume = 10
+
+            for i = 1, 12 do
+                Img.ImageTransparency = Img.ImageTransparency == 1 and 0 or 1
+                if i == 1 then FinalSFX:Play() end
+                task.wait(0.16)
+            end
+
+            LocalPlayer:Kick("i see you.")
+        end)
