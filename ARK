@@ -160,7 +160,7 @@ MainTab:CreateToggle({
                 end
             end)
 
-            -- Anti Crash Remotes
+
             task.spawn(function()
                 local lastTick = 0
                 local spamCount = 0
@@ -1008,3 +1008,104 @@ TrollTab:CreateToggle({
         end
     end
 })
+
+------------------------------------------------------
+--  CREDITS TAB
+------------------------------------------------------
+
+local CreditsTab = Window:CreateTab("Credits", 4483362458)
+
+
+------------------------------------------------------
+-- MAIN CREDITS
+------------------------------------------------------
+CreditsTab:CreateSection("ARK HUB CREDITS")
+
+CreditsTab:CreateLabel("Script Owner: zxkuhl")
+CreditsTab:CreateLabel("UI/Hub Developer: zxkuhl")
+CreditsTab:CreateLabel("Main Tester: Jay")
+
+
+------------------------------------------------------
+-- 3. DEVELOPER BIOS
+------------------------------------------------------
+CreditsTab:CreateSection("Developer Bios")
+
+CreditsTab:CreateLabel("zxkuhl — Main Scripter & Project Owner")
+CreditsTab:CreateLabel("zxkuhl — UI / Organization Developer")
+
+
+------------------------------------------------------
+-- 8. PARTNERS SECTION
+------------------------------------------------------
+CreditsTab:CreateSection("Partners & Collabs")
+CreditsTab:CreateLabel("Partner Scripts: (none yet)")
+
+
+------------------------------------------------------
+-- 10. MOTIVATIONAL TEXT OF THE DAY
+------------------------------------------------------
+local motivMsgs = {
+    "Keep improving.",
+    "Never paste when you can create.",
+    "ARK Hub is built different.",
+    "You're closer than you think.",
+    "Small steps > no steps.",
+    "Your code is stronger than your excuses.",
+    "Dream big, start small.",
+    "Every bug is a learning opportunity.",
+    "Persistence beats talent.",
+    "Refactor like a pro.",
+    "Push limits, not errors.",
+    "Clean code is happy code.",
+    "Fail fast, learn faster.",
+    "Your future self will thank you.",
+    "Innovation starts with curiosity.",
+    "If u see this u a lucky one🙃"
+}
+
+local randomMsg = motivMsgs[math.random(1, #motivMsgs)]
+CreditsTab:CreateSection("Message of the Day")
+CreditsTab:CreateLabel(randomMsg)
+
+
+------------------------------------------------------
+-- 11. CODE INTEGRITY STATUS
+------------------------------------------------------
+CreditsTab:CreateSection("Integrity Status")
+
+-- Create the label first
+local integrityLabel = CreditsTab:CreateLabel("Integrity: Checking...")
+
+-- Function to check integrity
+local function updateIntegrity()
+    if _G.ARK_ANTI_PIRATE == true then
+        integrityLabel:Set("Integrity: Clean ✓")
+    else
+        integrityLabel:Set("Integrity: INVALID ✗")
+    end
+end
+
+-- Initial check
+updateIntegrity()
+
+-- Update every second
+spawn(function()
+    while true do
+        updateIntegrity()
+        wait(1)
+    end
+end)
+
+------------------------------------------------------
+-- 12. LICENSE
+------------------------------------------------------
+CreditsTab:CreateSection("License: MIT")
+
+local mitLicenseText = [[
+MIT License
+Copyright (c) 2025 zxkuhl
+
+Use only.  Do NOT copy, edit, resell, or claim.]]
+
+CreditsTab:CreateLabel(mitLicenseText)
