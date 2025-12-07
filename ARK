@@ -407,8 +407,8 @@ if not _G.ARK_ANTI_PIRATE then
 end
 
 InfoTab:CreateLabel("ARK Hub — Made by zxkuhl PIRATING IS ILLEGAL DO NOT COPY MY WORK MAKE YOUR OWN!")
-InfoTab:CreateLabel("Version: 3.5")
-InfoTab:CreateLabel("UPDATE LOG: player Info grabber updated to give more information and due to lag its scan interval is 60(secs) before next scan I am sorry for lack of updates because I have no ideas I need suggestions.")
+InfoTab:CreateLabel("Version: 3.6")
+InfoTab:CreateLabel("UPDATE LOG: added credits tab with a small Easter egg I’ll let yall figure out ")
 InfoTab:CreateLabel("DISCORD SERVER: KittyScripts.")
 
 InfoTab:CreateButton({
