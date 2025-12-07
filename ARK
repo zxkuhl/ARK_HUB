@@ -1,17 +1,15 @@
+
+
 _G.ARK_ANTI_PIRATE = true
 
---// ARK Hub Anti-Piracy (Two Codes, One File + Kick Player)
-
--- Fetch both codes from one GitHub file
 local success, remoteData = pcall(function()
     return game:HttpGet("https://raw.githubusercontent.com/zxkuhl/ARK_HUB/main/ark_codes.txt")
 end)
 
--- Local codes (must EXACT match)
 local localA = "19582749284729174918274819274"
 local localB = "92837492837492837492837492837"
 
--- Parse file (expects 2 lines)
+
 local remoteA, remoteB
 if success and remoteData then
     local lines = remoteData:split("\n")
@@ -21,18 +19,14 @@ end
 
 local Player = game:GetService("Players").LocalPlayer
 
--- If wrong, missing, changed, or edited → kick the player
 if not success or remoteA ~= localA or remoteB ~= localB then
     Player:Kick("PIRATING IS ILLEGAL\nIS UP TO 250,000 DOLLARS AND 5 YEARS IN JAIL.")
     while true do task.wait() end
 end
 
--- If passed, script continues normally...
 
--- ARK HUB FULL SCRIPT (REWRITTEN & FIXED)
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Window Setup
 local Window = Rayfield:CreateWindow({
     Name = "ARK",
     Icon = 10180536602,
@@ -62,7 +56,7 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
--- Services
+
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
@@ -108,7 +102,7 @@ MainTab:CreateButton({
     SectionParent = MainSection,
     Callback = function()
         pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/memeenjoyer43/darkdex/refs/heads/main/script"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Babyhamsta/RBLX_Scripts/main/Universal/BypassedDarkDexV3.lua", true))()
         end)
     end
 })
@@ -413,8 +407,8 @@ if not _G.ARK_ANTI_PIRATE then
 end
 
 InfoTab:CreateLabel("ARK Hub — Made by zxkuhl PIRATING IS ILLEGAL DO NOT COPY MY WORK MAKE YOUR OWN!")
-InfoTab:CreateLabel("Version: 3.3")
-InfoTab:CreateLabel("UPDATE LOG: PLAYER INFO GRABBER IS NOW WORKING AGAIN WITH SOME SMALL BUG FIXES ALSO DISCORD SERVER NAME CHANGE.")
+InfoTab:CreateLabel("Version: 3.5")
+InfoTab:CreateLabel("UPDATE LOG: player Info grabber updated to give more information and due to lag its scan interval is 60(secs) before next scan I am sorry for lack of updates because I have no ideas I need suggestions.")
 InfoTab:CreateLabel("DISCORD SERVER: KittyScripts.")
 
 InfoTab:CreateButton({
@@ -437,14 +431,11 @@ InfoTab:CreateButton({
     SectionParent = SocialsSection,
     Callback = function()
         setclipboard("https://www.tiktok.com/@zxkuhl")
-
-        if syn and syn.request then
-            syn.request({Url = "https://www.tiktok.com/@zxkuhl", Method = "GET"})
-        elseif request then
-            request({Url = "https://www.tiktok.com/@zxkuhl", Method = "GET"})
-        elseif http and http.request then
-            http.request({Url = "https://www.tiktok.com/@zxkuhl", Method = "GET"})
-        end
+Rayfield:Notify({
+            Title = "Copied!",
+            Content = "TikTok link copied copied to clipboard, paste in browser!",
+            Duration = 3
+        })
     end
 })
 
@@ -453,6 +444,11 @@ InfoTab:CreateButton({
     SectionParent = SocialsSection,
     Callback = function()
         setclipboard("https://www.roblox.com/users/1885859525/profile")
+    Rayfield:Notify({
+            Title = "Copied!",
+            Content = "Roblox link copied copied to clipboard, paste in browser!",
+            Duration = 3
+        })
     end
 })
 
@@ -461,7 +457,12 @@ InfoTab:CreateButton({
     SectionParent = SocialsSection,
     Callback = function()
         setclipboard("https://www.youtube.com/@zxkuhl")
-    end,
+    Rayfield:Notify({
+            Title = "Copied!",
+            Content = "YouTube link copied copied to clipboard, paste in browser!",
+            Duration = 3
+        })
+    end
 })
 
 ----------------------------------------------------
@@ -911,5 +912,99 @@ local BangButton = TrollTab:CreateButton({
     Name = "Load Bang UI",
     Callback = function()
 loadstring(game:HttpGet('https://raw.githubusercontent.com/4gh9/Bang-Script-Gui/main/bang%20gui.lua'))()
+    end
+})
+
+TrollTab:CreateButton({
+    Name = "Fun Mode[DONT USE I CANT SAVE YOU IF YOU DO]",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/zxkuhl/ARK_HUB/main/…"))()
+    end
+})
+
+TrollTab:CreateButton({
+    Name = "SERVER CRASHER(IDK IF IT WORKS)",
+    Callback = function()
+    local player = game.Players.LocalPlayer
+local character = player.Character
+local backpack = player.Backpack
+
+local root = character:FindFirstChild("HumanoidRootPart")
+if not root then return end
+
+for _, grenade in backpack:GetChildren() do
+    if grenade.Name == "Grenade" then
+        grenade.Parent = character
+        grenade.start:FireServer()
+        task.delay(3, function()
+            grenade.throw:FireServer(
+            root.Position,
+            math.huge * 1/0,
+            root.Position
+            )
+        end)
+    end
+end    
+    end
+})
+
+local TrollEnabled = false
+
+TrollTab:CreateToggle({
+    Name = "Ultimate Troll Pack",
+    CurrentValue = false,
+    Flag = "UltimateTrollPack",
+    Callback = function(Value)
+        TrollEnabled = Value
+        if TrollEnabled then
+            Rayfield:Notify({
+                Title = "Ultimate Troll Pack",
+                Content = "Chaos unleashed!",
+                Duration = 5,
+                Image = 8248378219
+            })
+
+            task.spawn(function()
+                while TrollEnabled do
+                    local LocalPlayer = game.Players.LocalPlayer
+                    local Players = game:GetService("Players")
+                    local Workspace = game:GetService("Workspace")
+
+                    -- 1️⃣ Randomly teleport other players
+                    for _, plr in pairs(Players:GetPlayers()) do
+                        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                            plr.Character.HumanoidRootPart.CFrame = CFrame.new(
+                                math.random(-500,500), math.random(10,100), math.random(-500,500)
+                            )
+                        end
+                    end
+
+                    -- 2️⃣ Annoying sound spam
+                    local sound = Instance.new("Sound", Workspace)
+                    sound.SoundId = "rbxassetid://18435252" -- example annoying sound
+                    sound.Volume = 10
+                    sound:Play()
+                    task.wait(0.3)
+                    sound:Destroy()
+
+                    -- 3️⃣ Random size swap
+                    for _, plr in pairs(Players:GetPlayers()) do
+                        if plr.Character and plr ~= LocalPlayer then
+                            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
+                            if hrp then
+                                local scale = math.random(50, 300)/100
+                                for _, part in pairs(plr.Character:GetChildren()) do
+                                    if part:IsA("BasePart") then
+                                        part.Size *= scale
+                                    end
+                                end
+                            end
+                        end
+                    end
+
+                    task.wait(2) -- repeat every 2 seconds
+                end
+            end)
+        end
     end
 })
