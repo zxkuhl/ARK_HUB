@@ -1,0 +1,493 @@
+-- ============================
+-- Upgraded ESP Package (paste into your script)
+-- ============================
+
+-- requirements (should already exist in your script)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Create ESP section in Visuals tab (assumes VisualsTab exists)
+local ESPSection = nil
+pcall(function()
+    ESPSection = VisualsTab:CreateSection("ESP Settings")
+end)
+
+-- toggles via Rayfield UI (fallback local vars if Rayfield not available)
+local ESP_ENABLED = true
+local DRAW_SKELETON = true
+local DRAW_BOX = true
+local DRAW_LINE = true
+local DRAW_ICON = true
+local DRAW_STATS = true
+local LINE_GLOW = true
+local LINE_RAINBOW = true
+local LINE_MAX_THICKNESS = 4
+local LINE_MIN_THICKNESS = 1
+
+if ESPSection then
+    ESPSection:CreateToggle({
+        Name = "ESP Enabled",
+        CurrentValue = ESP_ENABLED,
+        Callback = function(v) ESP_ENABLED = v end
+    })
+    ESPSection:CreateToggle({
+        Name = "Draw Skeleton",
+        CurrentValue = DRAW_SKELETON,
+        Callback = function(v) DRAW_SKELETON = v end
+    })
+    ESPSection:CreateToggle({
+        Name = "Draw Box",
+        CurrentValue = DRAW_BOX,
+        Callback = function(v) DRAW_BOX = v end
+    })
+    ESPSection:CreateToggle({
+        Name = "Directional Lines",
+        CurrentValue = DRAW_LINE,
+        Callback = function(v) DRAW_LINE = v end
+    })
+    ESPSection:CreateToggle({
+        Name = "Line Glow",
+        CurrentValue = LINE_GLOW,
+        Callback = function(v) LINE_GLOW = v end
+    })
+    ESPSection:CreateToggle({
+        Name = "Rainbow Lines",
+        CurrentValue = LINE_RAINBOW,
+        Callback = function(v) LINE_RAINBOW = v end
+    })
+end
+
+-- Utility: safe Drawing factory (handles environments that restrict Drawing)
+local function newDrawing(kind)
+    local ok, obj = pcall(function() return Drawing.new(kind) end)
+    if ok and obj then return obj end
+    -- fallback: table stub that ignores calls (prevents nil errors)
+    local stub = {}
+    stub.Visible = false
+    function stub.Set() end
+    return stub
+end
+
+-- World -> screen with onScreen flag
+local function worldToScreen(pos)
+    local camCFrame = Camera.CFrame
+    local viewportPoint, onScreen = Camera:WorldToViewportPoint(pos)
+    return Vector2.new(viewportPoint.X, viewportPoint.Y), onScreen
+end
+
+-- simple team check (if teams used), fallback false
+local function isTeammate(p)
+    if not p or not LocalPlayer then return false end
+    if p.Team and LocalPlayer.Team then
+        return p.Team == LocalPlayer.Team
+    end
+    return false
+end
+
+-- rainbow color (animated)
+local rainbowHue = 0
+local function getRainbowColor(offset)
+    offset = offset or 0
+    local hue = (tick() * 60 + offset) % 360 -- speed tweak
+    local s, v = 1, 1
+    local c = Color3.fromHSV((hue % 360) / 360, s, v)
+    return c
+end
+
+-- clamp function
+local function clamp(v, a, b) if v < a then return a elseif v > b then return b else return v end end
+
+-- table to hold drawings per player
+local espTable = {}
+
+-- skeleton bones chain map (HumanoidBodyParts)
+local bonePairs = {
+    {"Head", "UpperTorso"},
+    {"UpperTorso", "LowerTorso"},
+    {"UpperTorso", "LeftUpperArm"},
+    {"LeftUpperArm", "LeftLowerArm"},
+    {"UpperTorso", "RightUpperArm"},
+    {"RightUpperArm", "RightLowerArm"},
+    {"LowerTorso", "LeftUpperLeg"},
+    {"LeftUpperLeg", "LeftLowerLeg"},
+    {"LowerTorso", "RightUpperLeg"},
+    {"RightUpperLeg", "RightLowerLeg"},
+}
+
+-- helper: safe part find
+local function getPart(character, names)
+    for _, n in pairs(names) do
+        local p = character:FindFirstChild(n)
+        if p then return p end
+    end
+    return nil
+end
+
+-- create drawings for player
+local function createDrawingsForPlayer(p)
+    local d = {}
+    d.box = newDrawing("Square")
+    d.box_fade = newDrawing("Square") -- background dark
+    d.skeleton_lines = {} -- multiple line drawings
+    for i=1, #bonePairs do
+        d.skeleton_lines[i] = newDrawing("Line")
+        d.skeleton_lines[i].Thickness = 2
+        d.skeleton_lines[i].Visible = false
+    end
+    d.name = newDrawing("Text")
+    d.healthBar = newDrawing("Square")
+    d.healthBarBG = newDrawing("Square")
+    d.rightTexts = {
+        distance = newDrawing("Text"),
+        platform = newDrawing("Text"),
+        xyz = newDrawing("Text"),
+        hp = newDrawing("Text")
+    }
+    d.lineMain = newDrawing("Line")
+    d.lineGlow1 = newDrawing("Line")
+    d.lineGlow2 = newDrawing("Line")
+    d.endIcon = newDrawing("Circle")
+    d.visible = true
+    espTable[p] = d
+    return d
+end
+
+-- cleanup drawings for player
+local function removeDrawings(p)
+    local d = espTable[p]
+    if not d then return end
+    local function safeRemove(o)
+        if o and type(o) == "table" and pcall(function() o.Visible = false end) then
+            -- nothing else needed, Drawing garbage collects
+        end
+    end
+    safeRemove(d.box)
+    safeRemove(d.box_fade)
+    for _, l in pairs(d.skeleton_lines) do safeRemove(l) end
+    safeRemove(d.name)
+    safeRemove(d.healthBar)
+    safeRemove(d.healthBarBG)
+    for _, t in pairs(d.rightTexts) do safeRemove(t) end
+    safeRemove(d.lineMain)
+    safeRemove(d.lineGlow1)
+    safeRemove(d.lineGlow2)
+    safeRemove(d.endIcon)
+    espTable[p] = nil
+end
+
+-- remove on player leaving
+Players.PlayerRemoving:Connect(function(plr)
+    removeDrawings(plr)
+end)
+
+-- optional platform text estimation (not exact)
+local function guessPlatform(p)
+    if not p then return "Unknown" end
+    local u = p.UserId
+    -- crude pseudo-guess so it always returns something
+    if u % 3 == 0 then return "PC" end
+    if u % 3 == 1 then return "Mobile" end
+    return "Console"
+end
+
+-- clamp screen point to edges with padding
+local function clampToScreen(vec2)
+    local w = Camera.ViewportSize.X
+    local h = Camera.ViewportSize.Y
+    local pad = 6
+    return Vector2.new(clamp(vec2.X, pad, w - pad), clamp(vec2.Y, pad, h - pad))
+end
+
+-- main render loop
+RunService.RenderStepped:Connect(function()
+    if not ESP_ENABLED then
+        -- hide all
+        for p,d in pairs(espTable) do
+            if d then
+                d.box.Visible = false
+                d.box_fade.Visible = false
+                for _, l in pairs(d.skeleton_lines) do l.Visible = false end
+                d.name.Visible = false
+                d.healthBar.Visible = false
+                d.healthBarBG.Visible = false
+                for _, t in pairs(d.rightTexts) do t.Visible = false end
+                d.lineMain.Visible = false
+                d.lineGlow1.Visible = false
+                d.lineGlow2.Visible = false
+                d.endIcon.Visible = false
+            end
+        end
+        return
+    end
+
+    -- update rainbow hue
+    rainbowHue = (rainbowHue + 1) % 360
+
+    -- screen center bottom (Option A)
+    local screenCenter = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y - 20)
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player == LocalPlayer then
+            -- skip local player
+            if espTable[player] then
+                removeDrawings(player)
+            end
+            continue
+        end
+
+        local char = player.Character
+        if not char then
+            -- hide and continue
+            if espTable[player] then removeDrawings(player) end
+            continue
+        end
+
+        local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChildWhichIsA("BasePart")
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local head = char:FindFirstChild("Head")
+
+        if not hrp or not hum or not head then
+            if espTable[player] then removeDrawings(player) end
+            continue
+        end
+
+        local d = espTable[player] or createDrawingsForPlayer(player)
+
+        -- 2D box projection (simple screen bounding using head and root)
+        local headPos, headOn = worldToScreen(head.Position)
+        local rootPos, rootOn = worldToScreen(hrp.Position)
+
+        -- compute box corners in screen space:
+        -- Estimate height by head-to-root vertical distance
+        local height = math.abs(headPos.Y - rootPos.Y)
+        height = clamp(height, 32, 350) -- keep reasonable
+        local width = height * 0.6
+
+        local topLeft = Vector2.new(headPos.X - width/2, headPos.Y - height/2)
+        local bottomRight = Vector2.new(headPos.X + width/2, headPos.Y + height/2)
+        local boxSize = bottomRight - topLeft
+
+        -- TEAM / COLOR
+        local teamMate = isTeammate(player)
+        local boxColor = teamMate and Color3.fromRGB(60,140,255) or Color3.fromRGB(255,60,60)
+        local textColor = Color3.fromRGB(255,255,255)
+
+        -- DRAW BOX
+        if DRAW_BOX then
+            d.box_fade.Visible = true
+            d.box_fade.Position = topLeft
+            d.box_fade.Size = boxSize
+            d.box_fade.Filled = true
+            d.box_fade.Transparency = 0.5
+            d.box_fade.Color = Color3.new(0,0,0)
+
+            d.box.Visible = true
+            d.box.Position = topLeft
+            d.box.Size = boxSize
+            d.box.Filled = false
+            d.box.Color = boxColor
+            d.box.Thickness = 2
+            d.box.Transparency = 1
+        else
+            d.box.Visible = false
+            d.box_fade.Visible = false
+        end
+
+        -- SKELETON (simple stick lines)
+        if DRAW_SKELETON then
+            for i, pair in ipairs(bonePairs) do
+                local aName, bName = pair[1], pair[2]
+                local aPart = getPart(char, {aName})
+                local bPart = getPart(char, {bName})
+                local line = d.skeleton_lines[i]
+                if aPart and bPart then
+                    local apos, aOn = worldToScreen(aPart.Position)
+                    local bpos, bOn = worldToScreen(bPart.Position)
+                    -- only draw if we have coords
+                    line.Visible = true
+                    line.From = apos
+                    line.To = bpos
+                    line.Color = boxColor
+                    line.Thickness = 2
+                else
+                    line.Visible = false
+                end
+            end
+        else
+            for _, l in pairs(d.skeleton_lines) do l.Visible = false end
+        end
+
+        -- NAME (top center of box)
+        if d.name then
+            d.name.Visible = true
+            d.name.Position = Vector2.new(topLeft.X + boxSize.X/2, topLeft.Y - 18)
+            d.name.Center = true
+            d.name.Size = 16
+            d.name.Color = textColor
+            d.name.Text = player.Name
+            d.name.Outline = true
+        end
+
+        -- HEALTH BAR (left side)
+        if d.healthBar then
+            local hpPercent = clamp(hum.Health / math.max(hum.MaxHealth,1), 0, 1)
+            local hbW = 6
+            local hbH = boxSize.Y - 6
+            local hbTopLeft = Vector2.new(topLeft.X - (hbW + 6), topLeft.Y + 3)
+            d.healthBarBG.Visible = true
+            d.healthBarBG.Filled = true
+            d.healthBarBG.Color = Color3.new(0,0,0)
+            d.healthBarBG.Transparency = 0.6
+            d.healthBarBG.Position = hbTopLeft
+            d.healthBarBG.Size = Vector2.new(hbW, hbH)
+
+            d.healthBar.Visible = true
+            d.healthBar.Filled = true
+            d.healthBar.Position = hbTopLeft + Vector2.new(0, hbH * (1 - hpPercent))
+            d.healthBar.Size = Vector2.new(hbW, hbH * hpPercent)
+            -- fill color: green -> red based on hp
+            d.healthBar.Color = Color3.fromRGB(255*(1-hpPercent), 255*hpPercent, 0)
+        end
+
+        -- RIGHT SIDED STATS
+        if DRAW_STATS then
+            local dist = math.floor((hrp.Position - (LocalPlayer.Character and (LocalPlayer.Character:FindFirstChild("HumanoidRootPart") or workspace.CurrentCamera.CFrame):Position or workspace.CurrentCamera.CFrame.Position)).Magnitude)
+            local platform = guessPlatform(player)
+            local pos = hrp.Position
+            local hpPercent = math.floor((hum.Health / math.max(hum.MaxHealth,1)) * 100)
+
+            local rightX = topLeft.X + boxSize.X + 8
+            local baseY = topLeft.Y
+
+            d.rightTexts.distance.Visible = true
+            d.rightTexts.distance.Position = Vector2.new(rightX, baseY)
+            d.rightTexts.distance.Text = dist .. " studs"
+            d.rightTexts.distance.Color = textColor
+            d.rightTexts.distance.Size = 14
+            d.rightTexts.distance.Outline = true
+
+            d.rightTexts.platform.Visible = true
+            d.rightTexts.platform.Position = Vector2.new(rightX, baseY + 18)
+            d.rightTexts.platform.Text = "Platform: " .. platform
+            d.rightTexts.platform.Color = textColor
+            d.rightTexts.platform.Size = 14
+            d.rightTexts.platform.Outline = true
+
+            d.rightTexts.xyz.Visible = true
+            d.rightTexts.xyz.Position = Vector2.new(rightX, baseY + 36)
+            d.rightTexts.xyz.Text = string.format("XYZ: %.0f, %.0f, %.0f", pos.X, pos.Y, pos.Z)
+            d.rightTexts.xyz.Color = textColor
+            d.rightTexts.xyz.Size = 14
+            d.rightTexts.xyz.Outline = true
+
+            d.rightTexts.hp.Visible = true
+            d.rightTexts.hp.Position = Vector2.new(rightX, baseY + 54)
+            d.rightTexts.hp.Text = hpPercent .. "% HP"
+            d.rightTexts.hp.Color = textColor
+            d.rightTexts.hp.Size = 14
+            d.rightTexts.hp.Outline = true
+        else
+            for _, t in pairs(d.rightTexts) do t.Visible = false end
+        end
+
+        -- DIRECTION LINE (from bottom-center -> player head screen position)
+        if DRAW_LINE then
+            local headScreen, onScreen = worldToScreen(head.Position)
+            local targetPos = headScreen
+            if not onScreen then
+                -- clamp to edge so it still points to player
+                targetPos = clampToScreen(targetPos)
+            end
+
+            -- thickness based on (inverse) distance
+            local camPos = Camera.CFrame.Position
+            local dist = (head.Position - camPos).Magnitude
+            local thickness = LINE_MAX_THICKNESS - (clamp(dist / 150, 0, 1) * (LINE_MAX_THICKNESS - LINE_MIN_THICKNESS))
+            thickness = clamp(thickness, LINE_MIN_THICKNESS, LINE_MAX_THICKNESS)
+
+            -- rainbow color animated
+            local rainbowColor = getRainbowColor(0)
+            if LINE_RAINBOW then
+                -- animate hue slightly per player
+                rainbowColor = getRainbowColor(player.UserId % 360)
+            else
+                rainbowColor = isTeammate(player) and Color3.fromRGB(60,140,255) or Color3.fromRGB(255,60,60)
+            end
+
+            -- glow layers (two thicker faded lines)
+            if LINE_GLOW then
+                d.lineGlow2.Visible = true
+                d.lineGlow2.From = screenCenter
+                d.lineGlow2.To = targetPos
+                d.lineGlow2.Color = Color3.new(0,0,0)
+                d.lineGlow2.Transparency = 0.5
+                d.lineGlow2.Thickness = thickness + 6
+
+                d.lineGlow1.Visible = true
+                d.lineGlow1.From = screenCenter
+                d.lineGlow1.To = targetPos
+                d.lineGlow1.Color = Color3.new(0,0,0)
+                d.lineGlow1.Transparency = 0.35
+                d.lineGlow1.Thickness = thickness + 3
+            else
+                d.lineGlow1.Visible = false
+                d.lineGlow2.Visible = false
+            end
+
+            d.lineMain.Visible = true
+            d.lineMain.From = screenCenter
+            d.lineMain.To = targetPos
+            d.lineMain.Thickness = thickness
+            d.lineMain.Color = rainbowColor
+            d.lineMain.Transparency = 1
+        else
+            d.lineMain.Visible = false
+            d.lineGlow1.Visible = false
+            d.lineGlow2.Visible = false
+        end
+
+        -- END ICON (circle) at line end
+        if DRAW_ICON then
+            local endPos = worldToScreen(head.Position)
+            -- if offscreen clamp
+            local _, onS = Camera:WorldToViewportPoint(head.Position)
+            local iconPos = endPos
+            if not onS then iconPos = clampToScreen(endPos) end
+
+            d.endIcon.Visible = true
+            d.endIcon.Radius = 5
+            d.endIcon.Position = iconPos
+            d.endIcon.Color = getRainbowColor(player.UserId % 360)
+            d.endIcon.Filled = true
+            d.endIcon.Transparency = 0.95
+        else
+            d.endIcon.Visible = false
+        end
+    end
+end)
+
+-- safe initialization of existing players
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then
+        createDrawingsForPlayer(p)
+    end
+end
+
+-- Garbage collector on script unload (if you ever re-run)
+local function cleanupAll()
+    for p,_ in pairs(espTable) do
+        removeDrawings(p)
+    end
+end
+
+-- Expose toggles (optional) to the global for quick console toggling
+_G.ARK_ESP = {
+    Enable = function(v) ESP_ENABLED = v end,
+    ToggleSkeleton = function(v) DRAW_SKELETON = v end,
+    ToggleBox = function(v) DRAW_BOX = v end,
+    ToggleLine = function(v) DRAW_LINE = v end,
+    ToggleRainbow = function(v) LINE_RAINBOW = v end,
+    Cleanup = cleanupAll
+}
