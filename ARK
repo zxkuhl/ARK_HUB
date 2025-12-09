@@ -407,8 +407,8 @@ if not _G.ARK_ANTI_PIRATE then
 end
 
 InfoTab:CreateLabel("ARK Hub — Made by zxkuhl PIRATING IS ILLEGAL DO NOT COPY MY WORK MAKE YOUR OWN!")
-InfoTab:CreateLabel("Version: 3.6")
-InfoTab:CreateLabel("UPDATE LOG: added credits tab with a small Easter egg I’ll let yall figure out ")
+InfoTab:CreateLabel("Version: 3.9")
+InfoTab:CreateLabel("UPDATE LOG: added new tabs as well as new features ")
 InfoTab:CreateLabel("DISCORD SERVER: KittyScripts.")
 
 InfoTab:CreateButton({
@@ -1009,6 +1009,96 @@ TrollTab:CreateToggle({
     end
 })
 
+-- Settings Tab
+local SettingsTab = Window:CreateTab("Settings", "settings")
+
+SettingsTab:CreateSection("Configuration")
+
+local resetCooldown = false
+local cooldownTime = 5 -- seconds
+
+SettingsTab:CreateButton({
+    Name = "Reset ARK HUB UI",
+    Callback = function()
+        if resetCooldown then
+            Rayfield:Notify({
+                Title = "Please Wait",
+                Content = "Reset is on cooldown...",
+                Duration = 3
+            })
+            return
+        end
+
+        -- Confirmation prompt
+        Rayfield:Prompt({
+            Title = "Reset ARK HUB",
+            SubTitle = "Are you sure you want to reset the UI?",
+            Content = "This will reload ARK HUB entirely.",
+            Actions = {
+                Accept = {
+                    Name = "Yes, Reset",
+                    Callback = function()
+                        resetCooldown = true
+
+                        -- Destroy existing ARKHUB
+                        pcall(function()
+                            for _, ui in pairs(game.CoreGui:GetChildren()) do
+                                if ui.Name == "ARKHUB" then
+                                    ui:Destroy()
+                                end
+                            end
+                        end)
+
+                        -- Reload script
+                        local link = "https://raw.githubusercontent.com/zxkuhl/ARK_HUB/refs/heads/main/ARK"
+                        loadstring(game:HttpGet(link))()
+
+                        -- Notification after reset
+                        Rayfield:Notify({
+                            Title = "ARK HUB Reloaded",
+                            Content = "UI has been successfully reset.",
+                            Duration = 4
+                        })
+
+                        -- Cooldown timer
+                        task.delay(cooldownTime, function()
+                            resetCooldown = false
+                        end)
+                    end
+                },
+
+                Decline = {
+                    Name = "Cancel",
+                    Callback = function()
+                        Rayfield:Notify({
+                            Title = "Cancelled",
+                            Content = "Reset operation cancelled.",
+                            Duration = 2
+                        })
+                    end
+                }
+            }
+        })
+    end
+})
+
+SettingsTab:CreateButton({
+    Name = "Destroy GUI",
+    Callback = function()
+        Rayfield:Destroy()
+    end
+})
+
+SettingsTab:CreateKeybind({
+    Name = "Toggle UI",
+    CurrentKeybind = "K",
+    HoldToInteract = false,
+    Flag = "ToggleUI",
+    Callback = function(Keybind)
+        -- UI toggle implementation
+    end
+})
+
 ------------------------------------------------------
 --  CREDITS TAB
 ------------------------------------------------------
@@ -1061,7 +1151,8 @@ local motivMsgs = {
     "Fail fast, learn faster.",
     "Your future self will thank you.",
     "Innovation starts with curiosity.",
-    "If u see this u a lucky one🙃"
+    "If u see this u a lucky one🙃",
+    "hi - zxkuhl"
 }
 
 local randomMsg = motivMsgs[math.random(1, #motivMsgs)]
@@ -1100,12 +1191,49 @@ end)
 ------------------------------------------------------
 -- 12. LICENSE
 ------------------------------------------------------
-CreditsTab:CreateSection("License: MIT")
+CreditsTab:CreateSection("MIT LICENSE")
 
-local mitLicenseText = [[
-MIT License
-Copyright (c) 2025 zxkuhl
+CreditsTab:CreateSection("License")
 
-Use only.  Do NOT copy, edit, resell, or claim.]]
+CreditsTab:CreateParagraph({
+    Title = "ARK Hub License — STRICT USAGE POLICY",
+    Content = [[
+Copyright (c) 2025 zxkuhl  
+All Rights Reserved.
 
-CreditsTab:CreateLabel(mitLicenseText)
+ARK Hub is protected intellectual property. Access to this software is granted 
+ONLY under the following strict terms. Use of the script constitutes full and 
+unconditional agreement to ALL conditions below.
+
+You MAY:
+• Use ARK Hub for personal gameplay ONLY  
+• Access features exactly as distributed  
+• Report bugs, issues, or security concerns  
+
+You may NOT, under ANY circumstances:
+• Copy, duplicate, or mirror the script  
+• Modify, alter, rewrite, or inject new code into any part of the hub  
+• Decompile, deobfuscate, reverse-engineer, or analyze internals  
+• Re-upload, redistribute, or share the script or ANY derivative  
+• Sell, trade, barter, or include ARK Hub in paid services  
+• Claim ownership or partial authorship  
+• Remove watermarks, credits, or embedded identifiers  
+• Spoof or bypass anti-tamper / anti-piracy protections  
+• Create "forks," “ported versions,” or “modded editions”  
+• Upload the script to ANY repository, hub, or exploit UI  
+• Attempt to hide or erase evidence of unauthorized use  
+
+Violations WILL result in:
+• Permanent and irreversible blacklist from ALL ARK Hub builds  
+• Forfeiture of access to updates and support  
+• Automated reporting of stolen uploads  
+• DMCA/Platform takedown requests on any redistributed content  
+• Identification of device/session fingerprints associated with abuse  
+
+This software is provided AS-IS with NO permission for modification, resale, 
+redistribution, or reverse-engineering in ANY form. These restrictions are 
+absolute and non-negotiable.
+
+If you do not agree to these terms, you are NOT authorized to use ARK Hub.
+    ]]
+})
