@@ -88,14 +88,6 @@ MainTab:CreateButton({
 })
 
 MainTab:CreateButton({
-    Name = "ESP 2 UPDATE ",
-    SectionParent = MainSection,
-    Callback = function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/zxkuhl/ARK_HUB/main/ESP.lua"))()
-    end
-})
-
-MainTab:CreateButton({
     Name = "Fly",
     SectionParent = MainSection,
     Callback = function()
